@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Macro Dashboard: PMI РФ, Copper, VIX и кривая доходности ОФЗ на одной странице."
+    >
+    <title>Macro Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="#" aria-label="Macro Dashboard">
+          <span class="brand-mark"></span>
+          <span>Macro Dashboard</span>
+        </a>
+        <div class="market-clock" aria-label="Статус данных">
+          <span class="pulse"></span>
+          <span>Static market view</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="shell intro-section" aria-labelledby="page-title">
+        <p class="eyebrow">Macro monitor</p>
+        <h1 id="page-title">4 ключевых индикатора для быстрого чтения рынка</h1>
+        <p class="lead">
+          PMI РФ, медь, VIX и кривая доходности ОФЗ собраны в одном темном
+          дашборде с понятными статусами и ссылками на первоисточники.
+        </p>
+      </section>
+
+      <section class="shell dashboard-grid" id="indicator-grid" aria-label="Макроэкономические индикаторы">
+        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
+        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
+        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
+        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
+      </section>
+
+      <section class="shell guide-section" aria-labelledby="guide-title">
+        <div class="section-heading">
+          <p class="eyebrow">Reading framework</p>
+          <h2 id="guide-title">Как читать индикаторы</h2>
+        </div>
+        <div class="guide-grid" id="reading-guide"></div>
+      </section>
+
+      <section class="shell links-section" aria-labelledby="links-title">
+        <div class="section-heading">
+          <p class="eyebrow">Primary sources</p>
+          <h2 id="links-title">Полезные ссылки</h2>
+        </div>
+        <div class="source-list" id="source-list"></div>
+      </section>
+    </main>
+  </body>
+</html>
