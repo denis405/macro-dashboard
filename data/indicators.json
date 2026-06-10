@@ -125,7 +125,7 @@
     {
       "id": "yield-curve",
       "title": "Кривая доходности ОФЗ",
-      "value": 181.9,
+      "value": 185.6,
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
@@ -164,7 +164,7 @@
         },
         {
           "label": "2026-06-10",
-          "value": 180.8
+          "value": 185.6
         }
       ],
       "guide": {
@@ -174,5 +174,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-10T13:45:14+00:00"
+  "updatedAt": "2026-06-10T16:08:58+00:00"
 }
