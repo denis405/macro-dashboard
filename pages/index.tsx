@@ -66,7 +66,35 @@ export default function Home() {
 
       <div className="min-h-screen">
         <header className="border-b border-surface-border bg-surface-elevated/80 backdrop-blur">
-          <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <a
+                href="../"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-ink"
+              >
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
+                Macro Dashboard
+              </a>
+              <nav
+                className="flex flex-wrap gap-2"
+                aria-label="Версии дашборда"
+              >
+                <a
+                  href="../"
+                  className="rounded-full border border-surface-border px-3 py-1 text-xs font-medium text-ink-muted transition hover:text-ink"
+                >
+                  v1 — свои графики
+                </a>
+                <a
+                  href="./"
+                  aria-current="page"
+                  className="rounded-full border border-accent bg-accent/10 px-3 py-1 text-xs font-medium text-accent"
+                >
+                  v2 — TradingView
+                </a>
+              </nav>
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-accent">
                 Macro Terminal
@@ -80,6 +108,7 @@ export default function Home() {
               </p>
             </div>
             {mounted && <ThemeToggle theme={theme} onChange={setTheme} />}
+            </div>
           </div>
         </header>
 

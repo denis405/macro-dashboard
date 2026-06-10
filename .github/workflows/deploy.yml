@@ -25,20 +25,27 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "22"
-          cache: npm
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build static site
+      - name: Build TradingView dashboard (v2)
         run: npm run build
         env:
           GITHUB_PAGES: "true"
 
+      - name: Assemble GitHub Pages site
+        run: |
+          mkdir -p site/v2
+          cp index.html app.js styles.css site/
+          cp -r data site/
+          cp -r out/. site/v2/
+          touch site/.nojekyll
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: out
+          path: site
 
   deploy:
     needs: build

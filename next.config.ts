@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const basePath =
-  process.env.GITHUB_PAGES === "true" ? "/macro-dashboard" : "";
+  process.env.GITHUB_PAGES === "true" ? "/macro-dashboard/v2" : "";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
