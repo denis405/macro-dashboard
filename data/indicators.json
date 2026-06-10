@@ -12,30 +12,6 @@
       "sourceUrl": "https://www.investing.com/economic-calendar/russian-s-p-global-manufacturing-pmi-1630",
       "history": [
         {
-          "label": "Янв",
-          "value": 50.8
-        },
-        {
-          "label": "Фев",
-          "value": 51.2
-        },
-        {
-          "label": "Мар",
-          "value": 52.4
-        },
-        {
-          "label": "Апр",
-          "value": 51.9
-        },
-        {
-          "label": "Май",
-          "value": 50.9
-        },
-        {
-          "label": "Июн",
-          "value": 51.7
-        },
-        {
           "label": "Jun 01, 2026",
           "value": 48.8
         }
@@ -49,41 +25,45 @@
     {
       "id": "copper",
       "title": "Цена меди (Copper)",
-      "value": 13713,
+      "value": 13484,
       "format": "usd",
-      "period": "USD за тонну",
-      "trend": "down",
-      "trendLabel": "падает",
+      "period": "USD/т, LME (месячные данные)",
+      "trend": "up",
+      "trendLabel": "растет",
       "description": "Медь часто используют как индикатор промышленного спроса и цикла.",
-      "sourceUrl": "https://tradingeconomics.com/commodity/copper",
+      "sourceUrl": "https://fred.stlouisfed.org/series/PCOPPUSDM",
       "history": [
         {
-          "label": "1",
-          "value": 9280
+          "label": "2025-10",
+          "value": 10740
         },
         {
-          "label": "2",
-          "value": 9360
+          "label": "2025-11",
+          "value": 10812
         },
         {
-          "label": "3",
-          "value": 9440
+          "label": "2025-12",
+          "value": 11791
         },
         {
-          "label": "4",
-          "value": 9580
+          "label": "2026-01",
+          "value": 12987
         },
         {
-          "label": "5",
-          "value": 9710
+          "label": "2026-02",
+          "value": 12951
         },
         {
-          "label": "6",
-          "value": 9820
+          "label": "2026-03",
+          "value": 12529
         },
         {
-          "label": "2026-06-10",
-          "value": 13713
+          "label": "2026-04",
+          "value": 12891
+        },
+        {
+          "label": "2026-05",
+          "value": 13484
         }
       ],
       "guide": {
@@ -95,41 +75,45 @@
     {
       "id": "vix",
       "title": "VIX",
-      "value": 21.1,
+      "value": 19.9,
       "format": "decimal",
       "period": "Индекс волатильности",
       "trend": "up",
       "trendLabel": "растет",
       "description": "Индекс ожидаемой волатильности рынка акций США.",
-      "sourceUrl": "https://tradingeconomics.com/vix:ind",
+      "sourceUrl": "https://www.cboe.com/tradable_products/vix/",
       "history": [
         {
-          "label": "1",
-          "value": 14.2
+          "label": "2026-04-01",
+          "value": 24.5
         },
         {
-          "label": "2",
-          "value": 16.5
+          "label": "2026-04-13",
+          "value": 19.1
         },
         {
-          "label": "3",
-          "value": 19.7
+          "label": "2026-04-22",
+          "value": 18.9
         },
         {
-          "label": "4",
-          "value": 21.0
+          "label": "2026-05-01",
+          "value": 17.0
         },
         {
-          "label": "5",
-          "value": 17.8
+          "label": "2026-05-12",
+          "value": 18.0
         },
         {
-          "label": "6",
-          "value": 18.4
+          "label": "2026-05-21",
+          "value": 16.8
         },
         {
-          "label": "2026-06-10",
-          "value": 21.1
+          "label": "2026-06-01",
+          "value": 16.1
+        },
+        {
+          "label": "2026-06-09",
+          "value": 19.9
         }
       ],
       "guide": {
@@ -141,42 +125,46 @@
     {
       "id": "yield-curve",
       "title": "Кривая доходности ОФЗ",
-      "value": 1.7,
+      "value": 181.9,
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
-      "trendLabel": "плоская форма",
-      "curveShape": "flat",
+      "trendLabel": "нормальная форма",
+      "curveShape": "normal",
       "description": "Форма кривой доходности российских государственных облигаций.",
       "sourceUrl": "https://www.moex.com/ru/marketdata/indices/state/g-curve/",
       "history": [
         {
-          "label": "1",
-          "value": 18
+          "label": "2026-04-22",
+          "value": 93.1
         },
         {
-          "label": "2",
-          "value": 22
+          "label": "2026-04-29",
+          "value": 123.5
         },
         {
-          "label": "3",
-          "value": 31
+          "label": "2026-05-06",
+          "value": 156.3
         },
         {
-          "label": "4",
-          "value": 28
+          "label": "2026-05-13",
+          "value": 137.7
         },
         {
-          "label": "5",
-          "value": 36
+          "label": "2026-05-20",
+          "value": 163.6
         },
         {
-          "label": "6",
-          "value": 42
+          "label": "2026-05-27",
+          "value": 155.5
+        },
+        {
+          "label": "2026-06-03",
+          "value": 171.5
         },
         {
           "label": "2026-06-10",
-          "value": 1.7
+          "value": 180.8
         }
       ],
       "guide": {
@@ -186,5 +174,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-10T10:09:28+00:00"
+  "updatedAt": "2026-06-10T13:45:14+00:00"
 }

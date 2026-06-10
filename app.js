@@ -36,10 +36,11 @@ async function initDashboard() {
       throw new Error(`Data request failed: ${response.status}`);
     }
 
-    const { indicators } = await response.json();
+    const { indicators, updatedAt } = await response.json();
     renderIndicators(indicators);
     renderReadingGuide(indicators);
     renderSourceLinks(indicators);
+    renderDataStatus(updatedAt);
   } catch (error) {
     renderError(error);
   }
@@ -222,6 +223,23 @@ function renderMiniChart(canvas, history, status) {
       }
     }
   });
+}
+
+function renderDataStatus(updatedAt) {
+  const status = document.querySelector("#data-status");
+  if (!status) return;
+
+  if (!updatedAt) {
+    status.textContent = "Данные без отметки времени";
+    return;
+  }
+
+  const formatted = new Intl.DateTimeFormat("ru-RU", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(updatedAt));
+
+  status.textContent = `Обновлено ${formatted}`;
 }
 
 function renderError(error) {

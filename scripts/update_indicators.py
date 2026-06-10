@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import csv
+import io
 import json
 import math
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from html import unescape
 from pathlib import Path
 from typing import Any
@@ -14,6 +17,9 @@ from urllib.request import Request, urlopen
 
 
 DATA_FILE = Path("data/indicators.json")
+HISTORY_POINTS = 8
+CBOE_VIX_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
+FRED_COPPER_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCOPPUSDM&cosd=2025-01-01"
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
@@ -27,6 +33,7 @@ class UpdateResult:
     trend: str = "sideways"
     trend_label: str = "обновлено"
     curve_shape: str | None = None
+    history: list[dict[str, float | str]] | None = None
 
 
 def main() -> int:
@@ -70,45 +77,54 @@ def update_pmi(indicator: dict[str, Any]) -> UpdateResult:
 
     trend = trend_from_delta(actual - previous, neutral_band=0.15)
     trend_label = "растет" if trend == "up" else "падает" if trend == "down" else "без резкого изменения"
-    return UpdateResult(value=round(actual, 1), label=release, trend=trend, trend_label=trend_label)
+    history = fetch_pmi_history(text, actual, release)
+
+    return UpdateResult(
+        value=round(actual, 1),
+        label=release,
+        trend=trend,
+        trend_label=trend_label,
+        history=history,
+    )
 
 
 def update_copper(indicator: dict[str, Any]) -> UpdateResult:
-    text = fetch_text(indicator["sourceUrl"])
-    row = find_market_row("Copper", text)
-    price_usd_per_lb = row["value"]
-    price_usd_per_ton = price_usd_per_lb * 2204.62262185
+    series = fetch_fred_copper_series()
+    latest = series[-1]
+    previous = series[-2]["value"] if len(series) > 1 else latest["value"]
 
-    trend = trend_from_delta(row["pct_change"], neutral_band=0.2)
+    trend = trend_from_delta(latest["value"] - previous, neutral_band=50)
     trend_label = "растет" if trend == "up" else "падает" if trend == "down" else "боковик"
     return UpdateResult(
-        value=round(price_usd_per_ton),
-        label=current_label(),
+        value=latest["value"],
+        label=latest["label"],
         trend=trend,
         trend_label=trend_label,
+        history=series[-HISTORY_POINTS:],
     )
 
 
 def update_vix(indicator: dict[str, Any]) -> UpdateResult:
-    text = fetch_text(indicator["sourceUrl"])
-    actual = find_number(r"Actual\s+([-+]?\d+(?:\.\d+)?)", text)
+    series = fetch_cboe_vix_series()
+    recent = series[-63:]
+    latest = series[-1]
+    previous = series[-2]["value"] if len(series) > 1 else latest["value"]
 
-    try:
-        row = find_market_row("USVIX", text)
-        pct_change = row["pct_change"]
-    except ValueError:
-        pct_change = actual - float(indicator["value"])
-
-    trend = trend_from_delta(pct_change, neutral_band=0.2)
+    trend = trend_from_delta(latest["value"] - previous, neutral_band=0.2)
     trend_label = "растет" if trend == "up" else "снижается" if trend == "down" else "умеренный риск"
-    return UpdateResult(value=round(actual, 1), label=current_label(), trend=trend, trend_label=trend_label)
+    return UpdateResult(
+        value=latest["value"],
+        label=latest["label"],
+        trend=trend,
+        trend_label=trend_label,
+        history=sample_history(recent),
+    )
 
 
 def update_yield_curve(indicator: dict[str, Any]) -> UpdateResult:
     curve = fetch_moex_curve()
-    two_year = nearest_curve_point(curve, 2.0)
-    ten_year = nearest_curve_point(curve, 10.0)
-    spread_bp = (ten_year["yield"] - two_year["yield"]) * 100
+    spread_bp = curve_spread_bp(curve)
+    history = fetch_moex_spread_history()
 
     if spread_bp < 0:
         shape = "inversion"
@@ -126,6 +142,7 @@ def update_yield_curve(indicator: dict[str, Any]) -> UpdateResult:
         trend="sideways",
         trend_label=label,
         curve_shape=shape,
+        history=history,
     )
 
 
@@ -137,7 +154,10 @@ def apply_update(indicator: dict[str, Any], result: UpdateResult) -> None:
     if result.curve_shape:
         indicator["curveShape"] = result.curve_shape
 
-    append_history(indicator, result.label, result.value)
+    if result.history is not None:
+        indicator["history"] = result.history[-HISTORY_POINTS:]
+    else:
+        append_history(indicator, result.label, result.value)
 
 
 def append_history(indicator: dict[str, Any], label: str, value: float) -> None:
@@ -148,100 +168,201 @@ def append_history(indicator: dict[str, Any], label: str, value: float) -> None:
     else:
         history.append({"label": label, "value": value})
 
-    indicator["history"] = history[-8:]
+    indicator["history"] = history[-HISTORY_POINTS:]
 
 
-def fetch_text(url: str) -> str:
-    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html,*/*"})
+def fetch_pmi_history(text: str, latest_value: float, latest_label: str) -> list[dict[str, Any]]:
+    releases = re.findall(
+        r"([A-Za-z]{3}\s+\d{2},\s+\d{4})\s+Actual\s+([-+]?\d+(?:\.\d+)?)",
+        text,
+        flags=re.I,
+    )
 
-    try:
-        with urlopen(request, timeout=30) as response:
-            raw = response.read().decode("utf-8", errors="ignore")
-    except (HTTPError, URLError, TimeoutError) as exc:
-        raise RuntimeError(f"fetch failed for {url}: {exc}") from exc
+    history: list[dict[str, Any]] = []
+    seen: set[str] = set()
 
-    return html_to_text(raw)
+    for label, value in releases:
+        if label in seen:
+            continue
+        seen.add(label)
+        history.append({"label": label, "value": round(float(value), 1)})
 
+    if not history:
+        history.append({"label": latest_label, "value": round(latest_value, 1)})
 
-def fetch_json(url: str) -> Any:
-    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json,*/*"})
-
-    try:
-        with urlopen(request, timeout=30) as response:
-            return json.loads(response.read().decode("utf-8", errors="ignore"))
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"json fetch failed for {url}: {exc}") from exc
-
-
-def fetch_moex_curve() -> list[dict[str, float]]:
-    urls = [
-        "https://iss.moex.com/iss/engines/stock/zcyc.json?iss.meta=off",
-        "https://iss.moex.com/iss/engines/stock/zcyc/securities.json?iss.meta=off",
-    ]
-
-    for url in urls:
-        try:
-            data = fetch_json(url)
-            curve = extract_curve_points(data)
-            if curve:
-                return curve
-        except RuntimeError as exc:
-            print(exc, file=sys.stderr)
-
-    raise RuntimeError("MOEX curve data was not found in known ISS endpoints")
+    history.reverse()
+    return history[-HISTORY_POINTS:]
 
 
-def extract_curve_points(data: Any) -> list[dict[str, float]]:
+def fetch_fred_copper_series() -> list[dict[str, Any]]:
+    raw = fetch_raw(FRED_COPPER_URL, timeout=20)
+    reader = csv.DictReader(io.StringIO(raw))
+    series: list[dict[str, Any]] = []
+
+    for row in reader:
+        value = row.get("PCOPPUSDM", "").strip()
+        label = row.get("observation_date", "").strip()
+        if not value or value == "." or not label:
+            continue
+        series.append({"label": label[:7], "value": round(float(value))})
+
+    if not series:
+        raise ValueError("no FRED copper data")
+
+    return series
+
+
+def fetch_cboe_vix_series() -> list[dict[str, Any]]:
+    raw = fetch_raw(CBOE_VIX_URL)
+    reader = csv.DictReader(io.StringIO(raw))
+    series: list[dict[str, Any]] = []
+
+    for row in reader:
+        close = row.get("CLOSE", "").strip()
+        label = row.get("DATE", "").strip()
+        if not close or not label:
+            continue
+
+        parsed = datetime.strptime(label, "%m/%d/%Y").strftime("%Y-%m-%d")
+        series.append({"label": parsed, "value": round(float(close), 1)})
+
+    if not series:
+        raise ValueError("no CBOE VIX data")
+
+    return series
+
+
+def sample_history(series: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if len(series) <= HISTORY_POINTS:
+        return series
+
+    step = max(1, len(series) // HISTORY_POINTS)
+    sampled = series[::step]
+    if sampled[-1]["label"] != series[-1]["label"]:
+        sampled.append(series[-1])
+    return sampled[-HISTORY_POINTS:]
+
+
+def fetch_moex_curve(date: str | None = None) -> list[dict[str, float]]:
+    url = "https://iss.moex.com/iss/engines/stock/zcyc.json?iss.meta=off"
+    if date:
+        url += f"&date={date}"
+
+    data = fetch_json(url)
+    block = data.get("yearyields", {})
+    columns = [str(column).lower() for column in block.get("columns", [])]
+    rows = block.get("data", [])
+
+    if "period" not in columns or "value" not in columns:
+        raise RuntimeError("MOEX yearyields block is missing period/value columns")
+
+    period_index = columns.index("period")
+    value_index = columns.index("value")
     points: list[dict[str, float]] = []
 
-    if not isinstance(data, dict):
-        return points
-
-    for block in data.values():
-        if not isinstance(block, dict):
+    for row in rows:
+        try:
+            term = float(row[period_index])
+            yield_value = float(row[value_index])
+        except (TypeError, ValueError, IndexError):
             continue
 
-        columns = [str(column).lower() for column in block.get("columns", [])]
-        rows = block.get("data", [])
+        if math.isfinite(term) and math.isfinite(yield_value) and term > 0:
+            points.append({"term": term, "yield": yield_value})
 
-        if not columns or not isinstance(rows, list):
-            continue
-
-        term_index = find_column(columns, ["years", "year", "period", "term", "duration", "days"])
-        yield_index = find_column(columns, ["yield", "value", "rate", "ytm", "effectiveyield"])
-
-        if term_index is None or yield_index is None:
-            continue
-
-        for row in rows:
-            try:
-                term = normalize_term(float(row[term_index]), columns[term_index])
-                yield_value = float(row[yield_index])
-            except (TypeError, ValueError, IndexError):
-                continue
-
-            if math.isfinite(term) and math.isfinite(yield_value) and term > 0:
-                points.append({"term": term, "yield": normalize_yield(yield_value)})
+    if not points:
+        raise RuntimeError(f"MOEX curve data was not found for {date or 'latest'}")
 
     return points
 
 
-def find_column(columns: list[str], candidates: list[str]) -> int | None:
-    for candidate in candidates:
-        for index, column in enumerate(columns):
-            if candidate in column:
-                return index
-    return None
+def curve_spread_bp(curve: list[dict[str, float]]) -> float:
+    two_year = nearest_curve_point(curve, 2.0)
+    ten_year = nearest_curve_point(curve, 10.0)
+    return (ten_year["yield"] - two_year["yield"]) * 100
 
 
-def normalize_term(value: float, column_name: str) -> float:
-    if "day" in column_name or "days" in column_name:
-        return value / 365
-    return value
+def fetch_moex_spread_history() -> list[dict[str, Any]]:
+    history: list[dict[str, Any]] = []
+    today = datetime.now(timezone.utc).date()
+    checked = 0
+    offset = 0
+
+    while len(history) < HISTORY_POINTS and offset <= 70:
+        date = today - timedelta(days=offset)
+        offset += 7
+
+        if date.weekday() >= 5:
+            continue
+
+        date_label = date.isoformat()
+        try:
+            spread = curve_spread_bp(fetch_moex_curve(date_label))
+        except RuntimeError:
+            continue
+
+        checked += 1
+        history.append({"label": date_label, "value": round(spread, 1)})
+
+    history.reverse()
+
+    if not history:
+        spread = curve_spread_bp(fetch_moex_curve())
+        history.append({"label": current_label(), "value": round(spread, 1)})
+
+    return history[-HISTORY_POINTS:]
 
 
-def normalize_yield(value: float) -> float:
-    return value / 100 if value > 1 else value
+def fetch_raw(url: str, timeout: int = 60) -> str:
+    try:
+        return fetch_raw_curl(url, timeout)
+    except RuntimeError:
+        pass
+
+    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
+
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            return response.read().decode("utf-8", errors="ignore")
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        raise RuntimeError(f"fetch failed for {url}: {exc}") from exc
+
+
+def fetch_raw_curl(url: str, timeout: int) -> str:
+    try:
+        result = subprocess.run(
+            [
+                "curl",
+                "-fsSL",
+                "--http1.1",
+                "--max-time",
+                str(timeout),
+                "-A",
+                USER_AGENT,
+                url,
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        raise RuntimeError(f"fetch failed for {url}: {exc}") from exc
+
+    if not result.stdout.strip():
+        raise RuntimeError(f"fetch failed for {url}: empty response")
+
+    return result.stdout
+
+
+def fetch_text(url: str) -> str:
+    return html_to_text(fetch_raw(url, timeout=30))
+
+
+def fetch_json(url: str) -> Any:
+    try:
+        return json.loads(fetch_raw(url, timeout=30))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"json fetch failed for {url}: {exc}") from exc
 
 
 def nearest_curve_point(curve: list[dict[str, float]], target_term: float) -> dict[str, float]:
@@ -268,20 +389,6 @@ def find_number(pattern: str, text: str, default: float | None = None) -> float:
 def find_text(pattern: str, text: str, default: str) -> str:
     match = re.search(pattern, text, flags=re.I)
     return match.group(1) if match else default
-
-
-def find_market_row(name: str, text: str) -> dict[str, float]:
-    pattern = rf"\b{re.escape(name)}\b\s+([-+]?\d[\d,.]*)\s+([-+]?\d[\d,.]*)\s+([-+]?\d+(?:\.\d+)?)%"
-    match = re.search(pattern, text, flags=re.I)
-
-    if not match:
-        raise ValueError(f"market row not found: {name}")
-
-    return {
-        "value": parse_number(match.group(1)),
-        "change": parse_number(match.group(2)),
-        "pct_change": parse_number(match.group(3)),
-    }
 
 
 def parse_number(value: str) -> float:

@@ -21,25 +21,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build TradingView dashboard (v2)
-        run: npm run build
-        env:
-          GITHUB_PAGES: "true"
-
       - name: Assemble GitHub Pages site
         run: |
-          mkdir -p site/v2
+          mkdir -p site
           cp index.html app.js styles.css site/
           cp -r data site/
-          cp -r out/. site/v2/
           touch site/.nojekyll
 
       - name: Upload Pages artifact
