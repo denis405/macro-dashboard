@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -35,4 +37,15 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/indicators.json
           git commit -m "Update macro indicators"
-          git push
+
+          branch="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin "$branch" && git push origin "$branch"; then
+              exit 0
+            fi
+            echo "Push rejected, retrying ($attempt/5)..."
+            sleep "$attempt"
+          done
+
+          echo "Failed to push after 5 attempts."
+          exit 1
