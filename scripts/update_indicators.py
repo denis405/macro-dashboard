@@ -17,6 +17,7 @@ DATA_FILE = Path("data/indicators.json")
 MAX_HISTORY = 24
 LB_PER_METRIC_TON = 2204.62262
 
+TE_RU_PMI_URL = "https://tradingeconomics.com/russia/manufacturing-pmi"
 TE_COPPER_URL = "https://tradingeconomics.com/commodity/copper"
 TE_VIX_URL = "https://tradingeconomics.com/vix:ind"
 TE_US_10Y_URL = "https://tradingeconomics.com/united-states/government-bond-yield"
@@ -75,17 +76,12 @@ def main() -> int:
 
 
 def update_pmi(indicator: dict[str, Any]) -> UpdateResult:
-    text = fetch_text(indicator["sourceUrl"])
-    actual = find_number(r"Actual\s+([-+]?\d+(?:\.\d+)?)", text)
-    previous = find_number(r"Previous\s+([-+]?\d+(?:\.\d+)?)", text, default=indicator["value"])
-    release = find_text(r"Latest Release\s+([A-Za-z]{3}\s+\d{2},\s+\d{4})", text, default=current_label())
+    html = fetch_html(indicator["sourceUrl"])
+    actual, previous, release, scraped_history = parse_te_russia_pmi(html)
 
     trend = trend_from_delta(actual - previous, neutral_band=0.15)
     trend_label = trend_label_ru(trend)
-    history = merge_history(
-        fetch_pmi_history(text, actual, release),
-        indicator.get("history", []),
-    )
+    history = merge_history(scraped_history, indicator.get("history", []))
 
     return UpdateResult(
         value=round(actual, 1),
@@ -342,27 +338,98 @@ def apply_update(indicator: dict[str, Any], result: UpdateResult) -> None:
         indicator["history"] = trim_history(result.history)
 
 
-def fetch_pmi_history(text: str, latest_value: float, latest_label: str) -> list[dict[str, Any]]:
-    releases = re.findall(
-        r"([A-Za-z]{3}\s+\d{2},\s+\d{4})\s+Actual\s+([-+]?\d+(?:\.\d+)?)",
-        text,
+def parse_te_russia_pmi(html: str) -> tuple[float, float, str, list[dict[str, Any]]]:
+    summary = re.search(
+        r"Manufacturing PMI in Russia .*? to ([\d.]+) points? in (\w+) from ([\d.]+) points? in (\w+) of (\d{4})",
+        html,
         flags=re.I,
     )
+    if not summary:
+        raise ValueError("Russia PMI summary was not found in Trading Economics HTML")
 
+    actual = round(float(summary.group(1)), 1)
+    month = summary.group(2)
+    previous = round(float(summary.group(3)), 1)
+    year = int(summary.group(5))
+    release = f"{month} {year}"
+    history = fetch_te_pmi_history(html, year, actual, release)
+
+    return actual, previous, release, history
+
+
+def fetch_te_pmi_history(
+    html: str,
+    year: int,
+    latest_value: float,
+    latest_label: str,
+) -> list[dict[str, Any]]:
     history: list[dict[str, Any]] = []
     seen: set[str] = set()
 
-    for label, value in releases:
+    def add_point(month_name: str, value: float, point_year: int) -> None:
+        label = f"{month_name} {point_year}"
         if label in seen:
-            continue
+            return
         seen.add(label)
-        history.append({"label": label, "value": round(float(value), 1)})
+        history.append({"label": label, "value": round(value, 1)})
+
+    add_point(latest_label.split()[0], latest_value, year)
+
+    for actual, month, previous, previous_month in re.findall(
+        r"PMI (?:rose|fell|inched down|inched up|was unchanged at) to ([\d.]+) in (\w+) from ([\d.]+) in (\w+)",
+        html,
+        flags=re.I,
+    ):
+        month_year = resolve_pmi_year(month, year)
+        previous_year = resolve_pmi_year(previous_month, year, reference_month=month)
+        add_point(month, float(actual), month_year)
+        add_point(previous_month, float(previous), previous_year)
 
     if not history:
         history.append({"label": latest_label, "value": round(latest_value, 1)})
 
-    history.reverse()
+    history.sort(key=pmi_history_sort_key)
     return trim_history(history)
+
+
+def resolve_pmi_year(month_name: str, default_year: int, reference_month: str | None = None) -> int:
+    month_index = month_number(month_name)
+    if reference_month is None:
+        return default_year
+
+    reference_index = month_number(reference_month)
+    if month_index > reference_index:
+        return default_year - 1
+    return default_year
+
+
+def month_number(month_name: str) -> int:
+    months = {
+        "january": 1,
+        "february": 2,
+        "march": 3,
+        "april": 4,
+        "may": 5,
+        "june": 6,
+        "july": 7,
+        "august": 8,
+        "september": 9,
+        "october": 10,
+        "november": 11,
+        "december": 12,
+    }
+    index = months.get(month_name.lower())
+    if index is None:
+        raise ValueError(f"unknown month name: {month_name}")
+    return index
+
+
+def pmi_history_sort_key(point: dict[str, Any]) -> tuple[int, int]:
+    label = str(point["label"])
+    parts = label.rsplit(" ", 1)
+    if len(parts) != 2 or not parts[1].isdigit():
+        return (0, 0)
+    return (int(parts[1]), month_number(parts[0]))
 
 
 def merge_history(

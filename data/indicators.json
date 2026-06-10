@@ -9,8 +9,20 @@
       "trend": "up",
       "trendLabel": "растет",
       "description": "Индекс деловой активности в производственном секторе России.",
-      "sourceUrl": "https://www.investing.com/economic-calendar/russian-s-p-global-manufacturing-pmi-1630",
+      "sourceUrl": "https://tradingeconomics.com/russia/manufacturing-pmi",
       "history": [
+        {
+          "label": "March 2026",
+          "value": 48.3
+        },
+        {
+          "label": "April 2026",
+          "value": 48.1
+        },
+        {
+          "label": "May 2026",
+          "value": 48.8
+        },
         {
           "label": "Jun 01, 2026",
           "value": 48.8
@@ -25,7 +37,7 @@
     {
       "id": "copper",
       "title": "Цена меди (Copper)",
-      "value": 13820,
+      "value": 13821,
       "format": "usd",
       "period": "USD/т, LME (месячные данные)",
       "trend": "up",
@@ -67,7 +79,7 @@
         },
         {
           "label": "2026-06-10",
-          "value": 13820
+          "value": 13821
         }
       ],
       "guide": {
@@ -79,7 +91,7 @@
     {
       "id": "vix",
       "title": "VIX",
-      "value": 22.1,
+      "value": 22.0,
       "format": "decimal",
       "period": "Индекс волатильности",
       "trend": "up",
@@ -121,7 +133,7 @@
         },
         {
           "label": "2026-06-10",
-          "value": 22.1
+          "value": 22.0
         }
       ],
       "guide": {
@@ -230,5 +242,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-10T16:28:18+00:00"
+  "updatedAt": "2026-06-10T16:34:08+00:00"
 }
