@@ -37,7 +37,7 @@
     {
       "id": "copper",
       "title": "Цена меди (Copper)",
-      "value": 13821,
+      "value": 13809,
       "format": "usd",
       "period": "USD/т, LME (месячные данные)",
       "trend": "up",
@@ -79,7 +79,7 @@
         },
         {
           "label": "2026-06-10",
-          "value": 13821
+          "value": 13809
         }
       ],
       "guide": {
@@ -149,7 +149,7 @@
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
-      "trendLabel": "нормальная форма; UST +40.0 б.п.",
+      "trendLabel": "нормальная форма; UST +40.2 б.п.",
       "curveShape": "normal",
       "description": "Форма кривой доходности российских государственных облигаций.",
       "sourceUrl": "https://www.moex.com/ru/marketdata/indices/state/g-curve/",
@@ -242,5 +242,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-10T16:34:08+00:00"
+  "updatedAt": "2026-06-10T16:38:56+00:00"
 }
