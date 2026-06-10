@@ -5,38 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta
       name="description"
-      content="Macro Dashboard: PMI РФ, Copper, VIX и кривая доходности ОФЗ на одной странице."
+      content="Macro Dashboard v2: PMI, медь, VIX и кривые доходности с графиками из первоисточников."
     >
-    <title>Macro Dashboard</title>
+    <title>Macro Dashboard — Embedded Charts</title>
+    <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
-    <script src="app.js" defer></script>
+    <script src="embeds.js" defer></script>
   </head>
   <body>
     <header class="site-header">
       <div class="shell header-inner">
-        <a class="brand" href="./" aria-label="Macro Dashboard">
+        <a class="brand" href="../" aria-label="Macro Dashboard">
           <span class="brand-mark"></span>
           <span>Macro Dashboard</span>
         </a>
         <nav class="header-nav" aria-label="Версии дашборда">
-          <a class="header-nav-link is-active" href="./" aria-current="page">v1 — свои графики</a>
-          <a class="header-nav-link" href="v2/">v2 — embed</a>
+          <a class="header-nav-link" href="../">v1 — свои графики</a>
+          <a class="header-nav-link is-active" href="./" aria-current="page">v2 — embed</a>
         </nav>
         <div class="market-clock" aria-label="Статус данных">
           <span class="pulse"></span>
-          <span>Static market view</span>
+          <span>Live source widgets</span>
         </div>
       </div>
     </header>
 
     <main>
       <section class="shell intro-section" aria-labelledby="page-title">
-        <p class="eyebrow">Macro monitor</p>
-        <h1 id="page-title">4 ключевых индикатора для быстрого чтения рынка</h1>
+        <p class="eyebrow">Macro monitor v2</p>
+        <h1 id="page-title">4 индикатора с графиками из первоисточников</h1>
         <p class="lead">
-          PMI РФ, медь, VIX и кривая доходности ОФЗ собраны в одном темном
-          дашборде с понятными статусами и ссылками на первоисточники.
+          Те же PMI, медь, VIX и кривые доходности — но вместо локальных данных
+          на странице встроены виджеты Trading Economics, Investing.com, FRED и MOEX.
         </p>
       </section>
 

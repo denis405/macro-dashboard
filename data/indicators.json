@@ -3,11 +3,11 @@
     {
       "id": "pmi",
       "title": "PMI РФ",
-      "value": 51.7,
+      "value": 48.8,
       "format": "decimal",
       "period": "Последнее значение",
-      "trend": "sideways",
-      "trendLabel": "около нейтральной зоны",
+      "trend": "up",
+      "trendLabel": "растет",
       "description": "Индекс деловой активности в производственном секторе России.",
       "sourceUrl": "https://www.investing.com/economic-calendar/russian-s-p-global-manufacturing-pmi-1630",
       "history": [
@@ -34,6 +34,10 @@
         {
           "label": "Июн",
           "value": 51.7
+        },
+        {
+          "label": "Jun 01, 2026",
+          "value": 48.8
         }
       ],
       "guide": {
