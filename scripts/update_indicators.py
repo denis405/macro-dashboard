@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import csv
-import io
 import json
-import math
 import re
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from html import unescape
 from pathlib import Path
 from typing import Any
@@ -17,12 +14,20 @@ from urllib.request import Request, urlopen
 
 
 DATA_FILE = Path("data/indicators.json")
-HISTORY_POINTS = 8
-CBOE_VIX_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
-FRED_COPPER_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCOPPUSDM&cosd=2025-01-01"
+MAX_HISTORY = 24
+LB_PER_METRIC_TON = 2204.62262
+
+TE_COPPER_URL = "https://tradingeconomics.com/commodity/copper"
+TE_VIX_URL = "https://tradingeconomics.com/vix:ind"
+TE_US_10Y_URL = "https://tradingeconomics.com/united-states/government-bond-yield"
+TE_US_2Y_URL = "https://tradingeconomics.com/united-states/2-year-note-yield"
+
+MOEX_GCURVE_URL = "https://www.moex.com/ru/marketdata/indices/state/g-curve/"
+MOEX_GCURVE_ARCHIVE_URL = "https://www.moex.com/ru/marketdata/indices/state/g-curve/archive/"
+
 USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 )
 
 
@@ -76,8 +81,11 @@ def update_pmi(indicator: dict[str, Any]) -> UpdateResult:
     release = find_text(r"Latest Release\s+([A-Za-z]{3}\s+\d{2},\s+\d{4})", text, default=current_label())
 
     trend = trend_from_delta(actual - previous, neutral_band=0.15)
-    trend_label = "растет" if trend == "up" else "падает" if trend == "down" else "без резкого изменения"
-    history = fetch_pmi_history(text, actual, release)
+    trend_label = trend_label_ru(trend)
+    history = merge_history(
+        fetch_pmi_history(text, actual, release),
+        indicator.get("history", []),
+    )
 
     return UpdateResult(
         value=round(actual, 1),
@@ -89,61 +97,237 @@ def update_pmi(indicator: dict[str, Any]) -> UpdateResult:
 
 
 def update_copper(indicator: dict[str, Any]) -> UpdateResult:
-    series = fetch_fred_copper_series()
-    latest = series[-1]
-    previous = series[-2]["value"] if len(series) > 1 else latest["value"]
+    html = fetch_html(TE_COPPER_URL)
+    meta = parse_te_charts_meta(html)
+    value_lb = float(meta["last"])
+    value_ton = round(value_lb * LB_PER_METRIC_TON)
+    label = te_last_update_label(html) or current_label()
 
-    trend = trend_from_delta(latest["value"] - previous, neutral_band=50)
-    trend_label = "растет" if trend == "up" else "падает" if trend == "down" else "боковик"
+    history = merge_history(
+        indicator.get("history", []),
+        [{"label": label, "value": value_ton}],
+    )
+    previous = history[-2]["value"] if len(history) > 1 else value_ton
+    trend = trend_from_delta(value_ton - float(previous), neutral_band=50)
+
     return UpdateResult(
-        value=latest["value"],
-        label=latest["label"],
+        value=value_ton,
+        label=label,
         trend=trend,
-        trend_label=trend_label,
-        history=series[-HISTORY_POINTS:],
+        trend_label=trend_label_ru(trend, sideways_label="боковик"),
+        history=history,
     )
 
 
 def update_vix(indicator: dict[str, Any]) -> UpdateResult:
-    series = fetch_cboe_vix_series()
-    recent = series[-63:]
-    latest = series[-1]
-    previous = series[-2]["value"] if len(series) > 1 else latest["value"]
+    html = fetch_html(TE_VIX_URL)
+    meta = parse_te_charts_meta(html)
+    value = round(float(meta["last"]), 1)
+    label = te_last_update_label(html) or current_label()
 
-    trend = trend_from_delta(latest["value"] - previous, neutral_band=0.2)
-    trend_label = "растет" if trend == "up" else "снижается" if trend == "down" else "умеренный риск"
+    history = merge_history(
+        indicator.get("history", []),
+        [{"label": label, "value": value}],
+    )
+    previous = history[-2]["value"] if len(history) > 1 else value
+    trend = trend_from_delta(value - float(previous), neutral_band=0.2)
+    trend_label = (
+        "растет"
+        if trend == "up"
+        else "снижается"
+        if trend == "down"
+        else "умеренный риск"
+    )
+
     return UpdateResult(
-        value=latest["value"],
-        label=latest["label"],
+        value=value,
+        label=label,
         trend=trend,
         trend_label=trend_label,
-        history=sample_history(recent),
+        history=history,
     )
 
 
 def update_yield_curve(indicator: dict[str, Any]) -> UpdateResult:
-    curve = fetch_moex_curve()
-    spread_bp = curve_spread_bp(curve)
-    history = fetch_moex_spread_history()
+    ofz_history = scrape_moex_ofz_spread_history()
+    latest = ofz_history[-1]
+    spread_bp = float(latest["value"])
 
-    if spread_bp < 0:
-        shape = "inversion"
-        label = "инверсия"
-    elif spread_bp < 25:
-        shape = "flat"
-        label = "плоская форма"
-    else:
-        shape = "normal"
-        label = "нормальная форма"
+    ust_spread_bp = scrape_ust_spread_bp()
+    shape = curve_shape_from_spread(spread_bp)
+    shape_label = curve_shape_label(shape)
+
+    trend_label = shape_label
+    if ust_spread_bp is not None:
+        sign = "+" if ust_spread_bp >= 0 else ""
+        trend_label = f"{shape_label}; UST {sign}{ust_spread_bp:.1f} б.п."
 
     return UpdateResult(
         value=round(spread_bp, 1),
-        label=current_label(),
+        label=str(latest["label"]),
         trend="sideways",
-        trend_label=label,
+        trend_label=trend_label,
         curve_shape=shape,
-        history=history,
+        history=ofz_history,
     )
+
+
+def scrape_moex_ofz_spread_history() -> list[dict[str, Any]]:
+    page_text = fetch_moex_page_text(MOEX_GCURVE_ARCHIVE_URL)
+    rows = parse_moex_archive_rows(page_text)
+
+    if not rows:
+        page_text = fetch_moex_page_text(MOEX_GCURVE_URL)
+        rows = parse_moex_current_curve_row(page_text)
+
+    if not rows:
+        raise RuntimeError("MOEX yield curve rows were not found in page HTML")
+
+    history: list[dict[str, Any]] = []
+    for row in rows:
+        spread_bp = round((row["y10"] - row["y2"]) * 100, 1)
+        history.append({"label": row["label"], "value": spread_bp})
+
+    return trim_history(history)
+
+
+def scrape_ust_spread_bp() -> float | None:
+    html_10y = fetch_html(TE_US_10Y_URL)
+    html_2y = fetch_html(TE_US_2Y_URL)
+    y10 = float(parse_te_charts_meta(html_10y)["last"])
+    y2 = float(parse_te_charts_meta(html_2y)["last"])
+    return round((y10 - y2) * 100, 1)
+
+
+def parse_moex_archive_rows(page_text: str) -> list[dict[str, float | str]]:
+    tenors = parse_moex_tenors(page_text)
+    if not tenors:
+        return []
+
+    try:
+        idx_2y = tenors.index(2.0)
+        idx_10y = tenors.index(10.0)
+    except ValueError as exc:
+        raise RuntimeError("MOEX archive table is missing 2Y or 10Y tenors") from exc
+
+    rows: list[dict[str, float | str]] = []
+    for line in page_text.splitlines():
+        parts = [part.strip() for part in re.split(r"\t+", line.strip()) if part.strip()]
+        if len(parts) < len(tenors) + 2:
+            continue
+
+        date_match = re.match(r"(\d{2})\.(\d{2})\.(\d{4})$", parts[0])
+        if not date_match:
+            continue
+
+        day, month, year = date_match.groups()
+        yields = [parse_locale_number(parts[2 + index]) for index in range(len(tenors))]
+        rows.append(
+            {
+                "label": f"{year}-{month}-{day}",
+                "y2": yields[idx_2y],
+                "y10": yields[idx_10y],
+            }
+        )
+
+    rows.reverse()
+    return rows
+
+
+def parse_moex_current_curve_row(page_text: str) -> list[dict[str, float | str]]:
+    tenors = parse_moex_tenors(page_text)
+    if not tenors:
+        return []
+
+    try:
+        idx_2y = tenors.index(2.0)
+        idx_10y = tenors.index(10.0)
+    except ValueError as exc:
+        raise RuntimeError("MOEX curve table is missing 2Y or 10Y tenors") from exc
+
+    for line in page_text.splitlines():
+        if not line.startswith("Y(t), %"):
+            continue
+
+        parts = [part.strip() for part in re.split(r"\t+", line.strip()) if part.strip()]
+        yields = [parse_locale_number(value) for value in parts[1:]]
+        if len(yields) < len(tenors):
+            continue
+
+        return [
+            {
+                "label": current_label(),
+                "y2": yields[idx_2y],
+                "y10": yields[idx_10y],
+            }
+        ]
+
+    return []
+
+
+def parse_moex_tenors(page_text: str) -> list[float]:
+    for line in page_text.splitlines():
+        if "0.25" not in line or "10" not in line or "20" not in line:
+            continue
+
+        parts = [part.strip() for part in re.split(r"\t+", line.strip()) if part.strip()]
+        if parts and re.search(r"срок|лет", parts[0], flags=re.I):
+            parts = parts[1:]
+
+        tenors: list[float] = []
+        for part in parts:
+            try:
+                tenors.append(parse_locale_number(part))
+            except ValueError:
+                break
+
+        if 2.0 in tenors and 10.0 in tenors:
+            return tenors
+
+    return []
+
+
+def fetch_moex_page_text(url: str) -> str:
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        raise RuntimeError("playwright is required for MOEX HTML scraping") from exc
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(user_agent=USER_AGENT)
+        page.goto(url, wait_until="domcontentloaded", timeout=90_000)
+        page.wait_for_timeout(12_000)
+        text = page.inner_text("body")
+        browser.close()
+
+    return text
+
+
+def parse_te_charts_meta(html: str) -> dict[str, Any]:
+    match = re.search(r"TEChartsMeta\s*=\s*(\[.*?\]);", html, flags=re.S)
+    if not match:
+        raise ValueError("TEChartsMeta block was not found")
+
+    meta = json.loads(match.group(1))
+    if not meta:
+        raise ValueError("TEChartsMeta is empty")
+
+    return meta[0]
+
+
+def te_last_update_label(html: str) -> str | None:
+    match = re.search(r"TELastUpdate\s*=\s*'(\d{12})'", html)
+    if not match:
+        return None
+
+    stamp = match.group(1)
+    try:
+        parsed = datetime.strptime(stamp, "%Y%m%d%H%M")
+    except ValueError:
+        return None
+
+    return parsed.strftime("%Y-%m-%d")
 
 
 def apply_update(indicator: dict[str, Any], result: UpdateResult) -> None:
@@ -155,20 +339,7 @@ def apply_update(indicator: dict[str, Any], result: UpdateResult) -> None:
         indicator["curveShape"] = result.curve_shape
 
     if result.history is not None:
-        indicator["history"] = result.history[-HISTORY_POINTS:]
-    else:
-        append_history(indicator, result.label, result.value)
-
-
-def append_history(indicator: dict[str, Any], label: str, value: float) -> None:
-    history = indicator.setdefault("history", [])
-
-    if history and history[-1].get("label") == label:
-        history[-1]["value"] = value
-    else:
-        history.append({"label": label, "value": value})
-
-    indicator["history"] = history[-HISTORY_POINTS:]
+        indicator["history"] = trim_history(result.history)
 
 
 def fetch_pmi_history(text: str, latest_value: float, latest_label: str) -> list[dict[str, Any]]:
@@ -191,126 +362,41 @@ def fetch_pmi_history(text: str, latest_value: float, latest_label: str) -> list
         history.append({"label": latest_label, "value": round(latest_value, 1)})
 
     history.reverse()
-    return history[-HISTORY_POINTS:]
+    return trim_history(history)
 
 
-def fetch_fred_copper_series() -> list[dict[str, Any]]:
-    raw = fetch_raw(FRED_COPPER_URL, timeout=20)
-    reader = csv.DictReader(io.StringIO(raw))
-    series: list[dict[str, Any]] = []
+def merge_history(
+  *series: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    seen: set[str] = set()
 
-    for row in reader:
-        value = row.get("PCOPPUSDM", "").strip()
-        label = row.get("observation_date", "").strip()
-        if not value or value == "." or not label:
-            continue
-        series.append({"label": label[:7], "value": round(float(value))})
+    for points in series:
+        for point in points:
+            label = str(point["label"])
+            if label in seen:
+                for index, existing in enumerate(merged):
+                    if existing["label"] == label:
+                        merged[index] = {"label": label, "value": point["value"]}
+                        break
+                continue
 
-    if not series:
-        raise ValueError("no FRED copper data")
+            seen.add(label)
+            merged.append({"label": label, "value": point["value"]})
 
-    return series
-
-
-def fetch_cboe_vix_series() -> list[dict[str, Any]]:
-    raw = fetch_raw(CBOE_VIX_URL)
-    reader = csv.DictReader(io.StringIO(raw))
-    series: list[dict[str, Any]] = []
-
-    for row in reader:
-        close = row.get("CLOSE", "").strip()
-        label = row.get("DATE", "").strip()
-        if not close or not label:
-            continue
-
-        parsed = datetime.strptime(label, "%m/%d/%Y").strftime("%Y-%m-%d")
-        series.append({"label": parsed, "value": round(float(close), 1)})
-
-    if not series:
-        raise ValueError("no CBOE VIX data")
-
-    return series
+    return trim_history(merged)
 
 
-def sample_history(series: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    if len(series) <= HISTORY_POINTS:
-        return series
-
-    step = max(1, len(series) // HISTORY_POINTS)
-    sampled = series[::step]
-    if sampled[-1]["label"] != series[-1]["label"]:
-        sampled.append(series[-1])
-    return sampled[-HISTORY_POINTS:]
+def trim_history(history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return history[-MAX_HISTORY:]
 
 
-def fetch_moex_curve(date: str | None = None) -> list[dict[str, float]]:
-    url = "https://iss.moex.com/iss/engines/stock/zcyc.json?iss.meta=off"
-    if date:
-        url += f"&date={date}"
-
-    data = fetch_json(url)
-    block = data.get("yearyields", {})
-    columns = [str(column).lower() for column in block.get("columns", [])]
-    rows = block.get("data", [])
-
-    if "period" not in columns or "value" not in columns:
-        raise RuntimeError("MOEX yearyields block is missing period/value columns")
-
-    period_index = columns.index("period")
-    value_index = columns.index("value")
-    points: list[dict[str, float]] = []
-
-    for row in rows:
-        try:
-            term = float(row[period_index])
-            yield_value = float(row[value_index])
-        except (TypeError, ValueError, IndexError):
-            continue
-
-        if math.isfinite(term) and math.isfinite(yield_value) and term > 0:
-            points.append({"term": term, "yield": yield_value})
-
-    if not points:
-        raise RuntimeError(f"MOEX curve data was not found for {date or 'latest'}")
-
-    return points
+def fetch_html(url: str, timeout: int = 60) -> str:
+    return fetch_raw(url, timeout=timeout)
 
 
-def curve_spread_bp(curve: list[dict[str, float]]) -> float:
-    two_year = nearest_curve_point(curve, 2.0)
-    ten_year = nearest_curve_point(curve, 10.0)
-    return (ten_year["yield"] - two_year["yield"]) * 100
-
-
-def fetch_moex_spread_history() -> list[dict[str, Any]]:
-    history: list[dict[str, Any]] = []
-    today = datetime.now(timezone.utc).date()
-    checked = 0
-    offset = 0
-
-    while len(history) < HISTORY_POINTS and offset <= 70:
-        date = today - timedelta(days=offset)
-        offset += 7
-
-        if date.weekday() >= 5:
-            continue
-
-        date_label = date.isoformat()
-        try:
-            spread = curve_spread_bp(fetch_moex_curve(date_label))
-        except RuntimeError:
-            continue
-
-        checked += 1
-        history.append({"label": date_label, "value": round(spread, 1)})
-
-    history.reverse()
-
-    if not history:
-        spread = curve_spread_bp(fetch_moex_curve())
-        history.append({"label": current_label(), "value": round(spread, 1)})
-
-    return history[-HISTORY_POINTS:]
+def fetch_text(url: str) -> str:
+    return html_to_text(fetch_html(url, timeout=30))
 
 
 def fetch_raw(url: str, timeout: int = 60) -> str:
@@ -319,7 +405,14 @@ def fetch_raw(url: str, timeout: int = 60) -> str:
     except RuntimeError:
         pass
 
-    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
+    request = Request(
+        url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
+        },
+    )
 
     try:
         with urlopen(request, timeout=timeout) as response:
@@ -339,6 +432,10 @@ def fetch_raw_curl(url: str, timeout: int) -> str:
                 str(timeout),
                 "-A",
                 USER_AGENT,
+                "-H",
+                "Accept: text/html,application/xhtml+xml",
+                "-H",
+                "Accept-Language: en-US,en;q=0.9,ru;q=0.8",
                 url,
             ],
             capture_output=True,
@@ -352,23 +449,6 @@ def fetch_raw_curl(url: str, timeout: int) -> str:
         raise RuntimeError(f"fetch failed for {url}: empty response")
 
     return result.stdout
-
-
-def fetch_text(url: str) -> str:
-    return html_to_text(fetch_raw(url, timeout=30))
-
-
-def fetch_json(url: str) -> Any:
-    try:
-        return json.loads(fetch_raw(url, timeout=30))
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"json fetch failed for {url}: {exc}") from exc
-
-
-def nearest_curve_point(curve: list[dict[str, float]], target_term: float) -> dict[str, float]:
-    if not curve:
-        raise ValueError("empty curve")
-    return min(curve, key=lambda point: abs(point["term"] - target_term))
 
 
 def html_to_text(raw_html: str) -> str:
@@ -395,12 +475,45 @@ def parse_number(value: str) -> float:
     return float(value.replace(",", "").strip())
 
 
+def parse_locale_number(value: str) -> float:
+    normalized = value.strip().replace(" ", "").replace("%", "")
+    if "," in normalized and "." in normalized:
+        normalized = normalized.replace(",", "")
+    else:
+        normalized = normalized.replace(",", ".")
+    return float(normalized)
+
+
 def trend_from_delta(delta: float, neutral_band: float) -> str:
     if delta > neutral_band:
         return "up"
     if delta < -neutral_band:
         return "down"
     return "sideways"
+
+
+def trend_label_ru(trend: str, sideways_label: str = "без резкого изменения") -> str:
+    if trend == "up":
+        return "растет"
+    if trend == "down":
+        return "падает"
+    return sideways_label
+
+
+def curve_shape_from_spread(spread_bp: float) -> str:
+    if spread_bp < 0:
+        return "inversion"
+    if spread_bp < 25:
+        return "flat"
+    return "normal"
+
+
+def curve_shape_label(shape: str) -> str:
+    if shape == "inversion":
+        return "инверсия"
+    if shape == "flat":
+        return "плоская форма"
+    return "нормальная форма"
 
 
 def current_label() -> str:

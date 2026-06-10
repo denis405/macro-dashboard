@@ -25,7 +25,7 @@
     {
       "id": "copper",
       "title": "Цена меди (Copper)",
-      "value": 13484,
+      "value": 13820,
       "format": "usd",
       "period": "USD/т, LME (месячные данные)",
       "trend": "up",
@@ -64,6 +64,10 @@
         {
           "label": "2026-05",
           "value": 13484
+        },
+        {
+          "label": "2026-06-10",
+          "value": 13820
         }
       ],
       "guide": {
@@ -75,7 +79,7 @@
     {
       "id": "vix",
       "title": "VIX",
-      "value": 19.9,
+      "value": 22.1,
       "format": "decimal",
       "period": "Индекс волатильности",
       "trend": "up",
@@ -114,6 +118,10 @@
         {
           "label": "2026-06-09",
           "value": 19.9
+        },
+        {
+          "label": "2026-06-10",
+          "value": 22.1
         }
       ],
       "guide": {
@@ -124,47 +132,95 @@
     },
     {
       "id": "yield-curve",
-      "title": "Кривая доходности ОФЗ",
-      "value": 185.6,
+      "title": "Кривая доходности UST и ОФЗ",
+      "value": 185.0,
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
-      "trendLabel": "нормальная форма",
+      "trendLabel": "нормальная форма; UST +40.0 б.п.",
       "curveShape": "normal",
       "description": "Форма кривой доходности российских государственных облигаций.",
       "sourceUrl": "https://www.moex.com/ru/marketdata/indices/state/g-curve/",
       "history": [
         {
-          "label": "2026-04-22",
-          "value": 93.1
+          "label": "2026-05-14",
+          "value": 139.0
         },
         {
-          "label": "2026-04-29",
-          "value": 123.5
+          "label": "2026-05-15",
+          "value": 161.0
         },
         {
-          "label": "2026-05-06",
-          "value": 156.3
+          "label": "2026-05-18",
+          "value": 172.0
         },
         {
-          "label": "2026-05-13",
-          "value": 137.7
+          "label": "2026-05-19",
+          "value": 156.0
         },
         {
           "label": "2026-05-20",
-          "value": 163.6
+          "value": 164.0
+        },
+        {
+          "label": "2026-05-21",
+          "value": 150.0
+        },
+        {
+          "label": "2026-05-22",
+          "value": 150.0
+        },
+        {
+          "label": "2026-05-25",
+          "value": 145.0
+        },
+        {
+          "label": "2026-05-26",
+          "value": 148.0
         },
         {
           "label": "2026-05-27",
-          "value": 155.5
+          "value": 156.0
+        },
+        {
+          "label": "2026-05-28",
+          "value": 160.0
+        },
+        {
+          "label": "2026-05-29",
+          "value": 156.0
+        },
+        {
+          "label": "2026-06-01",
+          "value": 150.0
+        },
+        {
+          "label": "2026-06-02",
+          "value": 172.0
         },
         {
           "label": "2026-06-03",
-          "value": 171.5
+          "value": 172.0
+        },
+        {
+          "label": "2026-06-04",
+          "value": 166.0
+        },
+        {
+          "label": "2026-06-05",
+          "value": 173.0
+        },
+        {
+          "label": "2026-06-08",
+          "value": 178.0
+        },
+        {
+          "label": "2026-06-09",
+          "value": 174.0
         },
         {
           "label": "2026-06-10",
-          "value": 185.6
+          "value": 185.0
         }
       ],
       "guide": {
@@ -174,5 +230,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-10T16:08:58+00:00"
+  "updatedAt": "2026-06-10T16:28:18+00:00"
 }
