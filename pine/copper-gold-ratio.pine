@@ -1,0 +1,15 @@
+//@version=6
+indicator("Copper-Gold Ratio", shorttitle="Cu/Au Ratio", overlay=false, precision=4)
+
+copper = request.security("COMEX:HG1!", timeframe.period, close, gaps=barmerge.gaps_off)
+gold = request.security("COMEX:GC1!", timeframe.period, close, gaps=barmerge.gaps_off)
+ratio = copper / gold
+
+ma50 = ta.sma(ratio, 50)
+ma200 = ta.sma(ratio, 200)
+
+trendColor = ratio >= ma200 ? color.new(color.emerald, 0) : color.new(color.orange, 0)
+
+plot(ratio, title="Cu/Au Ratio", color=trendColor, linewidth=2)
+plot(ma50, title="MA 50", color=color.new(color.blue, 30), linewidth=1)
+plot(ma200, title="MA 200", color=color.new(color.purple, 20), linewidth=1)

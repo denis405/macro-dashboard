@@ -1,0 +1,19 @@
+//@version=6
+indicator("US 10Y-2Y Yield Spread", shorttitle="10Y-2Y Spread", overlay=false, precision=3)
+
+us10y = request.security("TVC:US10Y", timeframe.period, close, gaps=barmerge.gaps_off)
+us02y = request.security("TVC:US02Y", timeframe.period, close, gaps=barmerge.gaps_off)
+spread = us10y - us02y
+
+inverted = spread < 0
+spreadColor = inverted ? color.new(color.red, 0) : color.new(color.emerald, 0)
+
+spreadPlot = plot(spread, title="10Y - 2Y Spread", color=spreadColor, linewidth=2)
+zeroPlot = plot(0, title="Zero Line", color=color.new(color.gray, 100), display=display.none)
+hline(0, title="Zero Line", color=color.gray, linestyle=hline.style_dashed, linewidth=1)
+
+fillColor = inverted ? color.new(color.red, 85) : color.new(color.emerald, 92)
+fill(spreadPlot, zeroPlot, color=fillColor, title="Inversion Zone")
+
+plotchar(inverted and not inverted[1], title="Inversion Start", char="▼", location=location.top, color=color.red, size=size.tiny)
+plotchar(not inverted and inverted[1], title="Inversion End", char="▲", location=location.bottom, color=color.emerald, size=size.tiny)
