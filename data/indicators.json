@@ -91,7 +91,7 @@
     {
       "id": "vix",
       "title": "VIX",
-      "value": 21.0,
+      "value": 21.1,
       "format": "decimal",
       "period": "Индекс волатильности",
       "trend": "up",
@@ -125,7 +125,7 @@
         },
         {
           "label": "2026-06-10",
-          "value": 21.0
+          "value": 21.1
         }
       ],
       "guide": {
@@ -137,7 +137,7 @@
     {
       "id": "yield-curve",
       "title": "Кривая доходности ОФЗ",
-      "value": 1.8,
+      "value": 1.7,
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
@@ -172,7 +172,7 @@
         },
         {
           "label": "2026-06-10",
-          "value": 1.8
+          "value": 1.7
         }
       ],
       "guide": {
@@ -182,5 +182,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-10T09:59:40+00:00"
+  "updatedAt": "2026-06-10T10:09:28+00:00"
 }
