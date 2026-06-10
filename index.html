@@ -1,63 +1,117 @@
-<!doctype html>
-<html lang="ru">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta
-      name="description"
-      content="Macro Dashboard: PMI РФ, Copper, VIX и кривая доходности ОФЗ на одной странице."
-    >
-    <title>Macro Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
-    <script src="app.js" defer></script>
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="shell header-inner">
-        <a class="brand" href="./" aria-label="Macro Dashboard">
-          <span class="brand-mark"></span>
-          <span>Macro Dashboard</span>
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Investment OS — профессиональный терминал для фундаментального инвестора">
+  <title>Investment OS</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Навигация">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">◈</span>
+          <span class="logo-text">Investment<span class="logo-accent">OS</span></span>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Свернуть меню" type="button">☰</button>
+      </div>
+
+      <div class="global-search-wrap">
+        <input type="search" id="global-search" class="global-search" placeholder="Поиск по приложению…" autocomplete="off">
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <a href="#/" class="nav-item active" data-route="/">
+          <span class="nav-icon">▣</span><span class="nav-label">Dashboard</span>
         </a>
-        <div class="market-clock" aria-label="Статус данных">
-          <span class="pulse"></span>
-          <span id="data-status">Загрузка данных…</span>
+        <a href="#/watchlist" class="nav-item" data-route="/watchlist">
+          <span class="nav-icon">◎</span><span class="nav-label">Watchlist</span>
+        </a>
+        <a href="#/valuation" class="nav-item" data-route="/valuation">
+          <span class="nav-icon">◉</span><span class="nav-label">Valuation</span>
+        </a>
+        <a href="#/portfolio" class="nav-item" data-route="/portfolio">
+          <span class="nav-icon">◫</span><span class="nav-label">Portfolio</span>
+        </a>
+        <a href="#/dividends" class="nav-item" data-route="/dividends">
+          <span class="nav-icon">◈</span><span class="nav-label">Dividends</span>
+        </a>
+        <a href="#/journal" class="nav-item" data-route="/journal">
+          <span class="nav-icon">◧</span><span class="nav-label">Journal</span>
+        </a>
+        <a href="#/ratings" class="nav-item" data-route="/ratings">
+          <span class="nav-icon">★</span><span class="nav-label">Ratings</span>
+        </a>
+        <a href="#/stress-test" class="nav-item" data-route="/stress-test">
+          <span class="nav-icon">⚡</span><span class="nav-label">Stress Test</span>
+        </a>
+        <a href="#/analytics" class="nav-item" data-route="/analytics">
+          <span class="nav-icon">◬</span><span class="nav-label">Analytics</span>
+        </a>
+        <a href="#/settings" class="nav-item" data-route="/settings">
+          <span class="nav-icon">⚙</span><span class="nav-label">Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="market-status">
+          <span class="status-dot"></span>
+          <span>Local Mode</span>
         </div>
       </div>
-    </header>
+    </aside>
 
-    <main>
-      <section class="shell intro-section" aria-labelledby="page-title">
-        <p class="eyebrow">Macro monitor</p>
-        <h1 id="page-title">4 ключевых индикатора для быстрого чтения рынка</h1>
-        <p class="lead">
-          PMI РФ, медь, VIX и кривая доходности ОФЗ собраны в одном темном
-          дашборде с понятными статусами и ссылками на первоисточники.
-        </p>
-      </section>
-
-      <section class="shell dashboard-grid" id="indicator-grid" aria-label="Макроэкономические индикаторы">
-        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
-        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
-        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
-        <article class="skeleton-card" aria-label="Загрузка индикаторов"></article>
-      </section>
-
-      <section class="shell guide-section" aria-labelledby="guide-title">
-        <div class="section-heading">
-          <p class="eyebrow">Reading framework</p>
-          <h2 id="guide-title">Как читать индикаторы</h2>
+    <!-- Main content -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="breadcrumbs" id="breadcrumbs">
+          <span class="breadcrumb-root">Investment OS</span>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current" id="breadcrumb-current">Dashboard</span>
         </div>
-        <div class="guide-grid" id="reading-guide"></div>
-      </section>
-
-      <section class="shell links-section" aria-labelledby="links-title">
-        <div class="section-heading">
-          <p class="eyebrow">Primary sources</p>
-          <h2 id="links-title">Полезные ссылки</h2>
+        <div class="topbar-actions">
+          <span class="topbar-clock" id="topbar-clock"></span>
+          <span class="currency-badge" id="currency-badge">USD</span>
         </div>
-        <div class="source-list" id="source-list"></div>
-      </section>
-    </main>
-  </body>
+      </header>
+
+      <main class="content" id="content" role="main">
+        <!-- Dynamic module content rendered here -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Modal root -->
+  <div id="modal-root" class="modal-root" hidden></div>
+
+  <!-- Core scripts (order matters) -->
+  <script src="assets/js/eventBus.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/components.js"></script>
+  <script src="assets/js/router.js"></script>
+  <script src="assets/js/seed.js"></script>
+  <!-- Modules -->
+  <script src="modules/dashboard/dashboard.js"></script>
+  <script src="modules/watchlist/watchlist.js"></script>
+  <script src="modules/valuation/valuation.js"></script>
+  <script src="modules/portfolio/portfolio.js"></script>
+  <script src="modules/dividends/dividends.js"></script>
+  <script src="modules/journal/journal.js"></script>
+  <script src="modules/ratings/ratings.js"></script>
+  <script src="modules/stress-test/stress-test.js"></script>
+  <script src="modules/analytics/analytics.js"></script>
+  <script src="modules/settings/settings.js"></script>
+  <!-- Bootstrap -->
+  <script src="assets/js/app.js"></script>
+</body>
 </html>

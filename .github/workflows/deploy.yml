@@ -1,4 +1,4 @@
-name: Deploy dashboard
+name: Deploy Investment OS
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-dashboard
+  group: deploy-investment-os
   cancel-in-progress: true
 
 permissions:
@@ -24,8 +24,9 @@ jobs:
       - name: Assemble GitHub Pages site
         run: |
           mkdir -p site
-          cp index.html app.js styles.css site/
-          cp -r data site/
+          cp index.html site/
+          cp -r assets site/
+          cp -r modules site/
           touch site/.nojekyll
 
       - name: Upload Pages artifact
