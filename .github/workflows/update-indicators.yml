@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "15 6 * * 1-5"
 
+concurrency:
+  group: update-indicators
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -16,6 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Setup Python
@@ -38,12 +43,17 @@ jobs:
           git add data/indicators.json
           git commit -m "Update macro indicators"
 
-          branch="${GITHUB_REF_NAME}"
           for attempt in 1 2 3 4 5; do
-            if git pull --rebase origin "$branch" && git push origin "$branch"; then
+            echo "Syncing with origin/main (attempt $attempt/5)..."
+            git fetch origin main
+            git rebase origin/main
+
+            if git push origin HEAD:main; then
+              echo "Push succeeded."
               exit 0
             fi
-            echo "Push rejected, retrying ($attempt/5)..."
+
+            echo "Push rejected, retrying..."
             sleep "$attempt"
           done
 
