@@ -11,12 +11,30 @@
       "description": "Индекс деловой активности в производственном секторе России.",
       "sourceUrl": "https://www.investing.com/economic-calendar/russian-s-p-global-manufacturing-pmi-1630",
       "history": [
-        { "label": "Янв", "value": 50.8 },
-        { "label": "Фев", "value": 51.2 },
-        { "label": "Мар", "value": 52.4 },
-        { "label": "Апр", "value": 51.9 },
-        { "label": "Май", "value": 50.9 },
-        { "label": "Июн", "value": 51.7 }
+        {
+          "label": "Янв",
+          "value": 50.8
+        },
+        {
+          "label": "Фев",
+          "value": 51.2
+        },
+        {
+          "label": "Мар",
+          "value": 52.4
+        },
+        {
+          "label": "Апр",
+          "value": 51.9
+        },
+        {
+          "label": "Май",
+          "value": 50.9
+        },
+        {
+          "label": "Июн",
+          "value": 51.7
+        }
       ],
       "guide": {
         "what": "Показывает, расширяется или сжимается производственная активность.",
@@ -27,20 +45,42 @@
     {
       "id": "copper",
       "title": "Цена меди (Copper)",
-      "value": 9820,
+      "value": 13713,
       "format": "usd",
       "period": "USD за тонну",
-      "trend": "up",
-      "trendLabel": "растет",
+      "trend": "down",
+      "trendLabel": "падает",
       "description": "Медь часто используют как индикатор промышленного спроса и цикла.",
       "sourceUrl": "https://tradingeconomics.com/commodity/copper",
       "history": [
-        { "label": "1", "value": 9280 },
-        { "label": "2", "value": 9360 },
-        { "label": "3", "value": 9440 },
-        { "label": "4", "value": 9580 },
-        { "label": "5", "value": 9710 },
-        { "label": "6", "value": 9820 }
+        {
+          "label": "1",
+          "value": 9280
+        },
+        {
+          "label": "2",
+          "value": 9360
+        },
+        {
+          "label": "3",
+          "value": 9440
+        },
+        {
+          "label": "4",
+          "value": 9580
+        },
+        {
+          "label": "5",
+          "value": 9710
+        },
+        {
+          "label": "6",
+          "value": 9820
+        },
+        {
+          "label": "2026-06-10",
+          "value": 13713
+        }
       ],
       "guide": {
         "what": "Отражает цену меди на мировом сырьевом рынке.",
@@ -51,20 +91,42 @@
     {
       "id": "vix",
       "title": "VIX",
-      "value": 18.4,
+      "value": 21.0,
       "format": "decimal",
       "period": "Индекс волатильности",
-      "trend": "sideways",
-      "trendLabel": "умеренный риск",
+      "trend": "up",
+      "trendLabel": "растет",
       "description": "Индекс ожидаемой волатильности рынка акций США.",
       "sourceUrl": "https://tradingeconomics.com/vix:ind",
       "history": [
-        { "label": "1", "value": 14.2 },
-        { "label": "2", "value": 16.5 },
-        { "label": "3", "value": 19.7 },
-        { "label": "4", "value": 21.0 },
-        { "label": "5", "value": 17.8 },
-        { "label": "6", "value": 18.4 }
+        {
+          "label": "1",
+          "value": 14.2
+        },
+        {
+          "label": "2",
+          "value": 16.5
+        },
+        {
+          "label": "3",
+          "value": 19.7
+        },
+        {
+          "label": "4",
+          "value": 21.0
+        },
+        {
+          "label": "5",
+          "value": 17.8
+        },
+        {
+          "label": "6",
+          "value": 18.4
+        },
+        {
+          "label": "2026-06-10",
+          "value": 21.0
+        }
       ],
       "guide": {
         "what": "Показывает ожидаемую рынком волатильность S&P 500.",
@@ -75,21 +137,43 @@
     {
       "id": "yield-curve",
       "title": "Кривая доходности ОФЗ",
-      "value": 42.0,
+      "value": 1.8,
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
-      "trendLabel": "нормальная форма",
-      "curveShape": "normal",
+      "trendLabel": "плоская форма",
+      "curveShape": "flat",
       "description": "Форма кривой доходности российских государственных облигаций.",
       "sourceUrl": "https://www.moex.com/ru/marketdata/indices/state/g-curve/",
       "history": [
-        { "label": "1", "value": 18 },
-        { "label": "2", "value": 22 },
-        { "label": "3", "value": 31 },
-        { "label": "4", "value": 28 },
-        { "label": "5", "value": 36 },
-        { "label": "6", "value": 42 }
+        {
+          "label": "1",
+          "value": 18
+        },
+        {
+          "label": "2",
+          "value": 22
+        },
+        {
+          "label": "3",
+          "value": 31
+        },
+        {
+          "label": "4",
+          "value": 28
+        },
+        {
+          "label": "5",
+          "value": 36
+        },
+        {
+          "label": "6",
+          "value": 42
+        },
+        {
+          "label": "2026-06-10",
+          "value": 1.8
+        }
       ],
       "guide": {
         "what": "Показывает соотношение доходностей коротких и длинных ОФЗ.",
@@ -97,5 +181,6 @@
         "danger": "Плоская кривая сигнализирует неопределенность, инверсия - повышенный стресс и риск замедления."
       }
     }
-  ]
+  ],
+  "updatedAt": "2026-06-10T09:59:40+00:00"
 }
