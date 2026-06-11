@@ -37,11 +37,11 @@
     {
       "id": "copper",
       "title": "Цена меди (Copper)",
-      "value": 13809,
+      "value": 13696,
       "format": "usd",
       "period": "USD/т, LME (месячные данные)",
-      "trend": "up",
-      "trendLabel": "растет",
+      "trend": "down",
+      "trendLabel": "падает",
       "description": "Медь часто используют как индикатор промышленного спроса и цикла.",
       "sourceUrl": "https://fred.stlouisfed.org/series/PCOPPUSDM",
       "history": [
@@ -80,6 +80,10 @@
         {
           "label": "2026-06-10",
           "value": 13809
+        },
+        {
+          "label": "2026-06-11",
+          "value": 13696
         }
       ],
       "guide": {
@@ -91,11 +95,11 @@
     {
       "id": "vix",
       "title": "VIX",
-      "value": 22.0,
+      "value": 20.8,
       "format": "decimal",
       "period": "Индекс волатильности",
-      "trend": "up",
-      "trendLabel": "растет",
+      "trend": "down",
+      "trendLabel": "снижается",
       "description": "Индекс ожидаемой волатильности рынка акций США.",
       "sourceUrl": "https://www.cboe.com/tradable_products/vix/",
       "history": [
@@ -134,6 +138,10 @@
         {
           "label": "2026-06-10",
           "value": 22.0
+        },
+        {
+          "label": "2026-06-11",
+          "value": 20.8
         }
       ],
       "guide": {
@@ -145,19 +153,15 @@
     {
       "id": "yield-curve",
       "title": "Кривая доходности UST и ОФЗ",
-      "value": 185.0,
+      "value": 183.0,
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
-      "trendLabel": "нормальная форма; UST +40.2 б.п.",
+      "trendLabel": "нормальная форма; UST +39.4 б.п.",
       "curveShape": "normal",
       "description": "Форма кривой доходности российских государственных облигаций.",
       "sourceUrl": "https://www.moex.com/ru/marketdata/indices/state/g-curve/",
       "history": [
-        {
-          "label": "2026-05-14",
-          "value": 139.0
-        },
         {
           "label": "2026-05-15",
           "value": 161.0
@@ -233,6 +237,10 @@
         {
           "label": "2026-06-10",
           "value": 185.0
+        },
+        {
+          "label": "2026-06-11",
+          "value": 183.0
         }
       ],
       "guide": {
@@ -242,5 +250,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-10T16:38:56+00:00"
+  "updatedAt": "2026-06-11T10:59:54+00:00"
 }
