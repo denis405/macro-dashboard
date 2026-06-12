@@ -37,11 +37,11 @@
     {
       "id": "copper",
       "title": "Цена меди (Copper)",
-      "value": 13696,
+      "value": 14064,
       "format": "usd",
       "period": "USD/т, LME (месячные данные)",
-      "trend": "down",
-      "trendLabel": "падает",
+      "trend": "up",
+      "trendLabel": "растет",
       "description": "Медь часто используют как индикатор промышленного спроса и цикла.",
       "sourceUrl": "https://fred.stlouisfed.org/series/PCOPPUSDM",
       "history": [
@@ -84,6 +84,10 @@
         {
           "label": "2026-06-11",
           "value": 13696
+        },
+        {
+          "label": "2026-06-12",
+          "value": 14064
         }
       ],
       "guide": {
@@ -95,7 +99,7 @@
     {
       "id": "vix",
       "title": "VIX",
-      "value": 20.8,
+      "value": 19.1,
       "format": "decimal",
       "period": "Индекс волатильности",
       "trend": "down",
@@ -142,6 +146,10 @@
         {
           "label": "2026-06-11",
           "value": 20.8
+        },
+        {
+          "label": "2026-06-12",
+          "value": 19.1
         }
       ],
       "guide": {
@@ -153,11 +161,11 @@
     {
       "id": "yield-curve",
       "title": "Кривая доходности UST и ОФЗ",
-      "value": 183.0,
+      "value": 186.0,
       "format": "spread",
       "period": "10Y - 2Y",
       "trend": "sideways",
-      "trendLabel": "нормальная форма; UST +39.4 б.п.",
+      "trendLabel": "нормальная форма; UST +39.2 б.п.",
       "curveShape": "normal",
       "description": "Форма кривой доходности российских государственных облигаций.",
       "sourceUrl": "https://www.moex.com/ru/marketdata/indices/state/g-curve/",
@@ -240,7 +248,7 @@
         },
         {
           "label": "2026-06-11",
-          "value": 183.0
+          "value": 186.0
         }
       ],
       "guide": {
@@ -250,5 +258,5 @@
       }
     }
   ],
-  "updatedAt": "2026-06-11T10:59:54+00:00"
+  "updatedAt": "2026-06-12T10:41:41+00:00"
 }
