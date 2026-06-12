@@ -1,117 +1,144 @@
-<!DOCTYPE html>
-<html lang="ru" data-theme="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Investment OS — профессиональный терминал для фундаментального инвестора">
-  <title>Investment OS</title>
-  <link rel="stylesheet" href="assets/css/main.css">
-  <link rel="stylesheet" href="assets/css/components.css">
-  <link rel="stylesheet" href="assets/css/dashboard.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
-</head>
-<body>
-  <div id="app" class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar" aria-label="Навигация">
-      <div class="sidebar-header">
-        <div class="logo">
-          <span class="logo-icon">◈</span>
-          <span class="logo-text">Investment<span class="logo-accent">OS</span></span>
-        </div>
-        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Свернуть меню" type="button">☰</button>
-      </div>
-
-      <div class="global-search-wrap">
-        <input type="search" id="global-search" class="global-search" placeholder="Поиск по приложению…" autocomplete="off">
-      </div>
-
-      <nav class="sidebar-nav" id="sidebar-nav">
-        <a href="#/" class="nav-item active" data-route="/">
-          <span class="nav-icon">▣</span><span class="nav-label">Dashboard</span>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Macro Dashboard — Russia PMI, Copper, VIX, and US Yield Curve with composite macro regime score."
+    >
+    <title>Macro Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
+    <script type="module" src="js/dashboard.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="./">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Macro Dashboard</span>
         </a>
-        <a href="#/watchlist" class="nav-item" data-route="/watchlist">
-          <span class="nav-icon">◎</span><span class="nav-label">Watchlist</span>
-        </a>
-        <a href="#/valuation" class="nav-item" data-route="/valuation">
-          <span class="nav-icon">◉</span><span class="nav-label">Valuation</span>
-        </a>
-        <a href="#/portfolio" class="nav-item" data-route="/portfolio">
-          <span class="nav-icon">◫</span><span class="nav-label">Portfolio</span>
-        </a>
-        <a href="#/dividends" class="nav-item" data-route="/dividends">
-          <span class="nav-icon">◈</span><span class="nav-label">Dividends</span>
-        </a>
-        <a href="#/journal" class="nav-item" data-route="/journal">
-          <span class="nav-icon">◧</span><span class="nav-label">Journal</span>
-        </a>
-        <a href="#/ratings" class="nav-item" data-route="/ratings">
-          <span class="nav-icon">★</span><span class="nav-label">Ratings</span>
-        </a>
-        <a href="#/stress-test" class="nav-item" data-route="/stress-test">
-          <span class="nav-icon">⚡</span><span class="nav-label">Stress Test</span>
-        </a>
-        <a href="#/analytics" class="nav-item" data-route="/analytics">
-          <span class="nav-icon">◬</span><span class="nav-label">Analytics</span>
-        </a>
-        <a href="#/settings" class="nav-item" data-route="/settings">
-          <span class="nav-icon">⚙</span><span class="nav-label">Settings</span>
-        </a>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="market-status">
-          <span class="status-dot"></span>
-          <span>Local Mode</span>
+        <div class="market-clock" aria-live="polite">
+          <span class="pulse" aria-hidden="true"></span>
+          <span id="data-status">Loading data…</span>
         </div>
       </div>
-    </aside>
+    </header>
 
-    <!-- Main content -->
-    <div class="main-wrapper">
-      <header class="topbar">
-        <div class="breadcrumbs" id="breadcrumbs">
-          <span class="breadcrumb-root">Investment OS</span>
-          <span class="breadcrumb-sep">/</span>
-          <span class="breadcrumb-current" id="breadcrumb-current">Dashboard</span>
+    <main class="shell">
+      <div id="error-banner" class="error-banner" hidden role="alert"></div>
+
+      <section class="panel regime-panel" aria-labelledby="regime-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Macro Regime</p>
+            <h1 id="regime-title">Market Regime Score</h1>
+          </div>
+          <span id="regime-status" class="status-pill status-neutral">—</span>
         </div>
-        <div class="topbar-actions">
-          <span class="topbar-clock" id="topbar-clock"></span>
-          <span class="currency-badge" id="currency-badge">USD</span>
+        <div class="regime-body">
+          <div class="regime-score-block">
+            <p class="metric-label">Score</p>
+            <p id="regime-score" class="metric-value">—</p>
+            <p id="regime-label" class="metric-caption">—</p>
+          </div>
+          <div class="regime-breakdown-wrap">
+            <p class="metric-label">Signal breakdown</p>
+            <ul id="regime-breakdown" class="regime-breakdown"></ul>
+          </div>
         </div>
-      </header>
+      </section>
 
-      <main class="content" id="content" role="main">
-        <!-- Dynamic module content rendered here -->
-      </main>
-    </div>
-  </div>
+      <section class="panel composite-panel" aria-labelledby="composite-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Composite Index</p>
+            <h2 id="composite-title">Weighted Macro Composite</h2>
+            <p class="panel-copy">
+              Z-scored blend: 0.4×PMI + 0.3×Copper + 0.2×Yield Curve − 0.1×VIX
+            </p>
+          </div>
+          <div class="composite-meta">
+            <p id="composite-value" class="metric-value">—</p>
+            <span id="composite-status" class="status-pill status-neutral">—</span>
+            <p id="composite-label" class="metric-caption">—</p>
+          </div>
+        </div>
+        <div class="chart-wrap chart-wrap-lg">
+          <canvas id="composite-chart" aria-label="Composite index chart"></canvas>
+        </div>
+      </section>
 
-  <!-- Toast container -->
-  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+      <section class="indicator-grid" aria-label="Macro indicators">
+        <article class="panel indicator-card" data-indicator="pmi">
+          <div class="indicator-header">
+            <div>
+              <h2 class="indicator-title">Russia PMI</h2>
+              <p class="indicator-subtitle">Manufacturing PMI</p>
+            </div>
+            <span class="indicator-status status-pill status-neutral">—</span>
+          </div>
+          <p class="indicator-value">—</p>
+          <p class="indicator-date">—</p>
+          <div class="chart-wrap">
+            <canvas aria-label="PMI chart"></canvas>
+          </div>
+          <a class="indicator-source" href="#" target="_blank" rel="noopener noreferrer">Source</a>
+        </article>
 
-  <!-- Modal root -->
-  <div id="modal-root" class="modal-root" hidden></div>
+        <article class="panel indicator-card" data-indicator="copper">
+          <div class="indicator-header">
+            <div>
+              <h2 class="indicator-title">Copper</h2>
+              <p class="indicator-subtitle">Global price (USD/mt)</p>
+            </div>
+            <span class="indicator-status status-pill status-neutral">—</span>
+          </div>
+          <p class="indicator-value">—</p>
+          <p class="indicator-date">—</p>
+          <div class="chart-wrap">
+            <canvas aria-label="Copper chart"></canvas>
+          </div>
+          <a class="indicator-source" href="#" target="_blank" rel="noopener noreferrer">Source</a>
+        </article>
 
-  <!-- Core scripts (order matters) -->
-  <script src="assets/js/eventBus.js"></script>
-  <script src="assets/js/storage.js"></script>
-  <script src="assets/js/utils.js"></script>
-  <script src="assets/js/components.js"></script>
-  <script src="assets/js/router.js"></script>
-  <script src="assets/js/seed.js"></script>
-  <!-- Modules -->
-  <script src="modules/dashboard/dashboard.js"></script>
-  <script src="modules/watchlist/watchlist.js"></script>
-  <script src="modules/valuation/valuation.js"></script>
-  <script src="modules/portfolio/portfolio.js"></script>
-  <script src="modules/dividends/dividends.js"></script>
-  <script src="modules/journal/journal.js"></script>
-  <script src="modules/ratings/ratings.js"></script>
-  <script src="modules/stress-test/stress-test.js"></script>
-  <script src="modules/analytics/analytics.js"></script>
-  <script src="modules/settings/settings.js"></script>
-  <!-- Bootstrap -->
-  <script src="assets/js/app.js"></script>
-</body>
+        <article class="panel indicator-card" data-indicator="vix">
+          <div class="indicator-header">
+            <div>
+              <h2 class="indicator-title">VIX</h2>
+              <p class="indicator-subtitle">CBOE Volatility Index</p>
+            </div>
+            <span class="indicator-status status-pill status-neutral">—</span>
+          </div>
+          <p class="indicator-value">—</p>
+          <p class="indicator-date">—</p>
+          <div class="chart-wrap">
+            <canvas aria-label="VIX chart"></canvas>
+          </div>
+          <a class="indicator-source" href="#" target="_blank" rel="noopener noreferrer">Source</a>
+        </article>
+
+        <article class="panel indicator-card" data-indicator="yieldCurve">
+          <div class="indicator-header">
+            <div>
+              <h2 class="indicator-title">Yield Curve</h2>
+              <p class="indicator-subtitle">US 10Y − 2Y spread</p>
+            </div>
+            <span class="indicator-status status-pill status-neutral">—</span>
+          </div>
+          <p class="indicator-value">—</p>
+          <p class="indicator-date">—</p>
+          <div class="chart-wrap">
+            <canvas aria-label="Yield curve chart"></canvas>
+          </div>
+          <a class="indicator-source" href="#" target="_blank" rel="noopener noreferrer">Source</a>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <p>Static macro dashboard for GitHub Pages. Data updates daily via GitHub Actions.</p>
+    </footer>
+  </body>
 </html>
